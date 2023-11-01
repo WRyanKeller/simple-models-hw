@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 let DogModel = {};
 
 const DogSchema = new mongoose.Schema({
@@ -24,7 +25,7 @@ const DogSchema = new mongoose.Schema({
   createdDate: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
 DogModel = mongoose.model('Dog', DogSchema);

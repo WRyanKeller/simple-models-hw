@@ -2,8 +2,8 @@
 const models = require('../models');
 
 // get the Cat model
-const Cat = models.Cat;
-const Dog = models.Dog;
+const { Cat } = models;
+const { Dog } = models;
 
 // default fake data so that we have something to work with until we make a real Cat
 const defaultData = {
@@ -248,7 +248,11 @@ const ageDogByName = async (req, res) => {
     // searches for a dog with the specified name from the query
     // updates it using an atomic operator
     // returns the updated one
-    doc = await Dog.findOneAndUpdate({ name: req.query.name }, {$inc: {age: 1}}, {new: true}).exec();
+    doc = await Dog.findOneAndUpdate(
+      { name: req.query.name },
+      { $inc: { age: 1 } },
+      { new: true }).exec();
+      
   } catch (err) {
     // If there is an error, log it and send the user an error message.
     console.log(err);
