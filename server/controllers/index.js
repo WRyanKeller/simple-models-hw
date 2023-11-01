@@ -2,7 +2,8 @@
 const models = require('../models');
 
 // get the Cat model
-const { Cat } = models;
+const Cat = models.Cat;
+const Dog = models.Dog;
 
 // default fake data so that we have something to work with until we make a real Cat
 const defaultData = {
@@ -81,6 +82,19 @@ const hostPage2 = (req, res) => {
 // Function to render the untemplated page3.
 const hostPage3 = (req, res) => {
   res.render('page3');
+};
+
+const hostPage4 = async (req, res) => {
+  try {
+    const docs = await Dog.find({}).lean().exec();
+
+    // Once we get back the docs array, we can send it to page1.
+    return res.render('page4', { dogs: docs });
+  } catch (err) {
+    // send back error on no dogs
+    console.log(err);
+    return res.status(500).json({ error: 'failed to find dogs' });
+  }
 };
 
 // Get name will return the name of the last added cat.
@@ -197,6 +211,59 @@ const searchName = async (req, res) => {
   return res.json({ name: doc.name, beds: doc.bedsOwned });
 };
 
+const addDog = async (req, res) => {
+  if (!req.body.firstname || !req.body.lastname || !req.body.breed || !req.body.age) {
+    // If they are missing data, send back an error.
+    return res.status(400).json({ error: 'both names, breed, and age are all required' });
+  }
+
+  const dogObj = {
+    name: `${req.body.firstname} ${req.body.lastname}`,
+    breed: req.body.breed,
+    age: req.body.age,
+  };
+  const newDog = new Dog(dogObj);
+
+  try {
+    await newDog.save();
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: 'failed to create dog' });
+  }
+
+  return res.json({
+    name: dogObj.name,
+    breed: dogObj.breed,
+    age: dogObj.age,
+  });
+};
+
+const ageDogByName = async (req, res) => {
+  if (!req.query.name) {
+    return res.status(400).json({ error: 'Name is required to age a dog!' });
+  }
+
+  let doc;
+  try {
+    // searches for a dog with the specified name from the query
+    // updates it using an atomic operator
+    // returns the updated one
+    doc = await Dog.findOneAndUpdate({ name: req.query.name }, {$inc: {age: 1}}, {new: true}).exec();
+  } catch (err) {
+    // If there is an error, log it and send the user an error message.
+    console.log(err);
+    return res.status(500).json({ error: 'Something went wrong' });
+  }
+
+  // If we do not find something that matches our search, doc will be empty.
+  if (!doc) {
+    return res.json({ error: 'No dog found by that name!' });
+  }
+
+  // Otherwise, we got a result and will send it back to the user.
+  return res.json({ name: doc.name, age: doc.age, breed: doc.breed });
+};
+
 /* A function for updating the last cat added to the database.
    Usually database updates would be a more involved process, involving finding
    the right element in the database based on query, modifying it, and updating
@@ -247,9 +314,12 @@ module.exports = {
   page1: hostPage1,
   page2: hostPage2,
   page3: hostPage3,
+  page4: hostPage4,
   getName,
   setName,
   updateLast,
   searchName,
+  addDog,
+  ageDog: ageDogByName,
   notFound,
 };
